@@ -1,28 +1,17 @@
-from __future__ import print_function
+from time import time as tm
 import numpy as np
-
+import mlflow
+import mlflow.keras
 import tensorflow as tf
-from tensorflow import keras
-
-from tensorflow.keras import Sequential
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, BatchNormalization, Activation
 from tensorflow.keras import backend as K
-# from keras.callbacks import EarlyStopping, TensorBoard, LearningRateScheduler
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from time import time as tm
-
-import mlflow
-import mlflow.keras
-
-import xgboost as xgb
-import mlflow
-import mlflow.xgboost
-
 sns.set_style("darkgrid")
 
+# MNIST case
 num_classes = 10
 
 # input image dimensions
@@ -59,8 +48,8 @@ print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
 
 # convert class vectors to binary class matrices
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
+y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
 
 def plot_accuracy_and_loss(trained_model):
@@ -95,8 +84,9 @@ def plot_accuracy_and_loss(trained_model):
     plt.show()
 
 
+# Model
+
 model2 = Sequential()
-# Add convolution 2D
 model2.add(Conv2D(32, kernel_size=(3, 3), activation=None, padding="same", kernel_initializer='he_normal',
                   input_shape=(img_rows, img_cols, 1)))
 model2.add(BatchNormalization())
@@ -131,17 +121,17 @@ def scheduler(epoch, lr):
     base = 0.01
     if epoch < 6:
         return base
-    elif epoch == 15 or epoch == 25:
-        return base
-    elif epoch == 16 or epoch == 26:
+    elif epoch == 50 or epoch == 100:
         return base * 0.5
+    elif epoch == 51 or epoch == 101:
+        return base * 0.25
     else:
         return lr * 1.25 * 1 / np.round(np.sqrt(epoch), 8)
 
 
-learning_rate_scheduler_cb = keras.callbacks.LearningRateScheduler(scheduler)
-tensorboard_cb = keras.callbacks.TensorBoard(log_dir="./logs")
-early_stopping_cb = keras.callbacks.EarlyStopping(monitor="val_loss", patience=35, restore_best_weights=True)
+learning_rate_scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
+tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=200, restore_best_weights=True)
 
 # all callbacks
 callbacks_list = [tensorboard_cb, early_stopping_cb, learning_rate_scheduler_cb]
@@ -157,7 +147,11 @@ bss = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
 # ess = [4, 5, 8, 12, 15]
 
 # z early stopping można 1 długie uczenie i tak się przerwie
-ess = [120]
+ess = [300]
+
+# Próba
+# bss = [2048]
+# ess = [2]
 
 # model place holders
 test_results = {}
@@ -168,7 +162,7 @@ experiment_id = "0"  # VCS Code models <- i tak dopisuje się TYLKO do ID == 0, 
 # experiment_id = mlflow.create_experiment("TF cb_lr_scheduler")
 experiment = mlflow.get_experiment(experiment_id)
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
-# mlflow.keras.autolog()
+# mlflow.keras.autolog()    # Nie działa w Windows
 
 # hyperparams tuning
 for es in ess:
