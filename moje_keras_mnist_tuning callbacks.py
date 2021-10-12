@@ -228,6 +228,3 @@ print("-------------------\n")
 
 for k, v in best_model.items():
     print("{}: {}".format(k, v))
-
-
-
