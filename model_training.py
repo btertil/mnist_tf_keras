@@ -173,10 +173,12 @@ mlflow.set_tracking_uri("sqlite:///mlflow.db")
 # hyperparams tuning
 for es in ess:
     for bs in bss:
-        if bs < 512 and es > 90:
-            continue
-        elif bs < 2048 and es > 240:
-            continue
+
+        # Not needed with EarlyStopping and fixed epochs!
+        # if bs < 512 and es > 90:
+        #     continue
+        # elif bs < 2048 and es > 240:
+        #     continue
 
         print("Training model with batch size = {} and {} epochs...".format(bs, es), end="", flush=True)
         tic = tm()
