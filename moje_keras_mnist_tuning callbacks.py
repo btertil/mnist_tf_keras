@@ -131,7 +131,7 @@ def scheduler(epoch, lr):
 
 learning_rate_scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
 tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=200, restore_best_weights=True)
+early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=120, restore_best_weights=True)
 
 # all callbacks
 callbacks_list = [tensorboard_cb, early_stopping_cb, learning_rate_scheduler_cb]
@@ -142,12 +142,12 @@ callbacks_list = [tensorboard_cb, early_stopping_cb, learning_rate_scheduler_cb]
 # ess = [1, 2, 3, 5, 8, 12, 15, 30, 60, 90, 240, 350]
 # ess = [1, 2, 3]
 
-bss = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+bss = [64, 128, 256, 512, 1024, 2048, 4096, 8192]
 # ess = [4, 5, 8, 12, 15, 30, 60, 90, 120]
 # ess = [4, 5, 8, 12, 15]
 
 # z early stopping można 1 długie uczenie i tak się przerwie
-ess = [300]
+ess = [180]
 
 # Próba
 # bss = [2048]
