@@ -99,7 +99,8 @@ def lr_scheduler(epoch, old_lr):
     elif epoch == 51 or epoch == 101:
         learning_rate = old_lr * 0.25
     else:
-        learning_rate = old_lr * 1.25 * 1 / np.round(np.sqrt(epoch), 8)
+        # learning_rate = old_lr * 3 / np.round(np.sqrt(epoch), 8)
+        learning_rate = old_lr * 0.95
 
     # to log lerning rate data to scalar in TensorBoard
     tf.summary.scalar('learning rate', data=learning_rate, step=epoch)
