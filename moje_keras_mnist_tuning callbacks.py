@@ -53,85 +53,53 @@ y_train = tf.keras.utils.to_categorical(y_train, num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
 
-def plot_accuracy_and_loss(trained_model):
-    hist = trained_model.history
-    acc = hist['accuracy']
-    val_acc = hist['val_accuracy']
-    loss = hist['loss']
-    val_loss = hist['val_loss']
-    epochs = range(1, len(acc) + 1)
-
-    fig, ax = plt.subplots(1, 2, figsize=(14, 6))
-
-    ax[0].tick_params(colors="grey")
-    ax[0].plot(epochs, acc, 'g', label='Training accuracy')
-    ax[0].plot(epochs, val_acc, 'r', label='Validation accuracy')
-    ax[0].set_title('Training and validation accuracy', color='grey', fontsize=16)
-    ax[0].set_xlabel('Epochs', color='grey', fontsize=12)
-    ax[0].set_ylabel('Accuracy', color='grey', fontsize=12)
-
-    ax[0].legend()
-    ax[0].grid(True)
-
-    ax[1].tick_params(colors="grey")
-    ax[1].plot(epochs, loss, 'g', label='Training loss')
-    ax[1].plot(epochs, val_loss, 'r', label='Validation loss')
-    ax[1].set_title('Training and validation loss', color='grey', fontsize=16)
-    ax[1].set_xlabel('Epochs', color='grey', fontsize=12)
-    ax[1].set_ylabel('Loss', color='grey', fontsize=12)
-    ax[1].legend()
-    ax[1].grid(True)
-
-    plt.show()
-
-
 # Model
-def create_model():
-    model2 = Sequential()
-    model2.add(Conv2D(32, kernel_size=(3, 3), activation=None, padding="same", kernel_initializer='he_normal',
+def create_model(learning_rate):
+    model = Sequential()
+    model.add(Conv2D(32, kernel_size=(3, 3), activation=None, padding="same", kernel_initializer='he_normal',
                       input_shape=(img_rows, img_cols, 1)))
-    model2.add(BatchNormalization())
-    model2.add(Activation('relu'))
-    model2.add(Conv2D(32, kernel_size=(3, 3), padding='same', activation=None))
-    model2.add(BatchNormalization())
-    model2.add(Activation('relu'))
-    model2.add(Conv2D(32, kernel_size=5, strides=2, padding='same', activation=None))
-    model2.add(BatchNormalization())
-    model2.add(Activation('relu'))
-    model2.add(MaxPooling2D((2, 2)))
-    model2.add(Dropout(0.4))
-    model2.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
-    model2.add(BatchNormalization())
-    model2.add(Activation('relu'))
-    model2.add(MaxPooling2D(pool_size=(2, 2)))
-    model2.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
-    model2.add(BatchNormalization())
-    model2.add(Activation('relu'))
-    model2.add(Dropout(0.4))
-    model2.add(Flatten())
-    model2.add(Dense(128, activation='relu'))
-    model2.add(Dropout(0.4))
-    model2.add(Dense(num_classes, activation='softmax'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Conv2D(32, kernel_size=(3, 3), padding='same', activation=None))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Conv2D(32, kernel_size=5, strides=2, padding='same', activation=None))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Dropout(0.4))
+    model.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.4))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.4))
+    model.add(Dense(num_classes, activation='softmax'))
 
-    model2.compile(
+    model.compile(
         loss="categorical_crossentropy",
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
         metrics=["accuracy"])
 
-    return model2
+    return model
 
 
 # Callbacks
 
-def lr_scheduler(epoch, lr):
+def lr_scheduler(epoch, old_lr):
     if epoch < 6:
-        learning_rate = lr
+        learning_rate = old_lr
     elif epoch == 50 or epoch == 100:
-        learning_rate = lr * 0.5
+        learning_rate = old_lr * 0.5
     elif epoch == 51 or epoch == 101:
-        learning_rate = lr * 0.25
+        learning_rate = old_lr * 0.25
     else:
-        learning_rate = lr * 1.25 * 1 / np.round(np.sqrt(epoch), 8)
+        learning_rate = old_lr * 1.25 * 1 / np.round(np.sqrt(epoch), 8)
 
     # to log lerning rate data to scalar in TensorBoard
     tf.summary.scalar('learning rate', data=learning_rate, step=epoch)
@@ -167,14 +135,15 @@ bss = [512, 1024, 2048, 4096, 8192]
 # ess = [4, 5, 8, 12, 15, 30, 60, 90, 120]
 # ess = [4, 5, 8, 12, 15]
 
-lrs = [0.01]
+lrs = [0.01, 0.05, 0.005]
 
 # z early stopping można 1 długie uczenie i tak się przerwie
 ess = [180]
 
 # Próba
-bss = [2048]
-ess = [2]
+# lrs = [0.005]
+# bss = [2048]
+# ess = [2]
 
 # model place holders
 test_results = {}
@@ -188,75 +157,80 @@ mlflow.set_tracking_uri("sqlite:///mlflow.db")
 # mlflow.keras.autolog()    # Nie działa w Windows
 
 # hyperparams tuning
-for es in ess:
-    for bs in bss:
+for lr in lrs:
+    for es in ess:
+        for bs in bss:
 
-        # Not needed with EarlyStopping and fixed epochs!
-        # if bs < 512 and es > 90:
-        #     continue
-        # elif bs < 2048 and es > 240:
-        #     continue
+            # Not needed with EarlyStopping and fixed epochs!
+            # if bs < 512 and es > 90:
+            #     continue
+            # elif bs < 2048 and es > 240:
+            #     continue
 
-        # Just make sure the model is re-created and training starts from baseline each time
-        model = create_model()
+            # Just make sure the model is re-created and training starts from baseline each time
+            tf_keras_model = create_model(lr)
 
-        print("Training model with batch size = {} and {} epochs...".format(bs, es), end="", flush=True)
-        tic = tm()
-        history_tmp = model.fit(X_train, y_train,
-                                 batch_size=bs,
-                                 epochs=es,
-                                 verbose=1,
-                                 validation_split=0.20,
-                                 callbacks=callbacks_list
-                                 )
-        toc = tm()
-        execution_time = round(toc - tic, 2)
+            print("Training model with batch size = {} and {} epochs with base_lr = {}"
+                  .format(bs, es, lr), end="", flush=True)
 
-        print("\b\b\b, OK! completed in {}s".format(str(execution_time)), flush=True)
+            tic = tm()
+            history_tmp = tf_keras_model.fit(X_train, y_train,
+                                             batch_size=bs,
+                                             epochs=es,
+                                             verbose=1,
+                                             validation_split=0.20,
+                                             callbacks=callbacks_list
+                                             )
+            toc = tm()
+            execution_time = round(toc - tic, 2)
 
-        score_tmp = model.evaluate(X_test, y_test, verbose=0)
-        print("batch size == ", bs)
-        print('Test loss:', score_tmp[0])
-        print('Test accuracy:', score_tmp[1])
-        print()
+            print("\b\b\b, OK! completed in {}s".format(str(execution_time)), flush=True)
 
-        test_results[bs] = {
-            'batch_size': bs,
-            'test_loss': score_tmp[0],
-            'test_accuracy': score_tmp[1],
-            'epochs': es,
-            'execution_time': execution_time
-        }
+            score_tmp = tf_keras_model.evaluate(X_test, y_test, verbose=0)
+            print("batch size == ", bs)
+            print('Test loss:', score_tmp[0])
+            print('Test accuracy:', score_tmp[1])
+            print()
 
-        if es >= 5:
-            # plot_accuracy_and_loss(history_tmp)
-            pass
-        print("\n\n")
+            test_results[bs] = {
+                'batch_size': bs,
+                'test_loss': score_tmp[0],
+                'test_accuracy': score_tmp[1],
+                'epochs': es,
+                'execution_time': execution_time,
+                'base_lr': lr
+            }
 
-        # log to mlflow
-        with mlflow.start_run(experiment_id=experiment_id) as run:
+            if es >= 5:
+                # plot_accuracy_and_loss(history_tmp)
+                pass
+            print("\n\n")
 
-            mlflow.log_param("batch_size", bs)
-            mlflow.log_param("epochs", es)
+            # log to mlflow
+            with mlflow.start_run(experiment_id=experiment_id) as run:
 
-            # mlflow.log_metric("test_loss", score_tmp[0])
-            # mlflow.log_metric("test_loss", score_tmp[0])
-            # mlflow.log_metric("test_loss", score_tmp[0])
-            # mlflow.log_metric("test_loss", score_tmp[0])
+                mlflow.log_param("batch_size", bs)
+                mlflow.log_param("epochs", es)
+                mlflow.log_param("base_lr", lr)
 
-            mlflow.log_metric("test_loss", score_tmp[0])
-            mlflow.log_metric("test_accuracy", score_tmp[1])
-            mlflow.log_metric("execution_time", execution_time)
-            mlflow.log_artifact("moje_keras_mnist_tuning callbacks.py")
+                # mlflow.log_metric("test_loss", score_tmp[0])
+                # mlflow.log_metric("test_loss", score_tmp[0])
+                # mlflow.log_metric("test_loss", score_tmp[0])
+                # mlflow.log_metric("test_loss", score_tmp[0])
 
-            # Log text, note description is a first parameter
-            mlflow.log_text(f"keras_model_re-created_cb_{bs}_{es}_es", "model description")
+                mlflow.log_metric("test_loss", score_tmp[0])
+                mlflow.log_metric("test_accuracy", score_tmp[1])
+                mlflow.log_metric("execution_time", execution_time)
+                mlflow.log_artifact("moje_keras_mnist_tuning callbacks.py")
 
-            mlflow.keras.log_model(model, f"keras_model_re-created_cb_{bs}_{es}_es")
+                # Log text, note description is a first parameter
+                mlflow.log_text(f"keras_model_re-created_cb_{bs}_{es}_es", "model description")
 
-        current_best = best_model.get('test_accuracy', 0.0)
-        if score_tmp[1] > current_best:
-            best_model = test_results[bs]
+                mlflow.keras.log_model(tf_keras_model, f"keras_model_re-created_cb_{bs}_{es}_es")
+
+            current_best = best_model.get('test_accuracy', 0.0)
+            if score_tmp[1] > current_best:
+                best_model = test_results[bs]
 
 print("\nBest model summary: ")
 print("-------------------\n")
