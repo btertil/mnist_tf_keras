@@ -57,7 +57,7 @@ y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 def create_model(learning_rate):
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3), activation=None, padding="same", kernel_initializer='he_normal',
-                      input_shape=(img_rows, img_cols, 1)))
+                     input_shape=(img_rows, img_cols, 1)))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Conv2D(32, kernel_size=(3, 3), padding='same', activation=None))
@@ -170,8 +170,8 @@ for lr in lrs:
             # Just make sure the model is re-created and training starts from baseline each time
             tf_keras_model = create_model(lr)
 
-            print("Training model with batch size = {} and {} epochs with base_lr = {}"
-                  .format(bs, es, lr), end="", flush=True)
+            print("Training model with batch size = {}, {} epochs and base_lr = {}:"
+                  .format(bs, es, lr), flush=True)
 
             tic = tm()
             history_tmp = tf_keras_model.fit(X_train, y_train,
