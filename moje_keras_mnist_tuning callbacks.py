@@ -1,4 +1,5 @@
 from time import time as tm
+import datetime
 import numpy as np
 import mlflow
 import mlflow.keras
@@ -85,52 +86,72 @@ def plot_accuracy_and_loss(trained_model):
 
 
 # Model
+def create_model():
+    model2 = Sequential()
+    model2.add(Conv2D(32, kernel_size=(3, 3), activation=None, padding="same", kernel_initializer='he_normal',
+                      input_shape=(img_rows, img_cols, 1)))
+    model2.add(BatchNormalization())
+    model2.add(Activation('relu'))
+    model2.add(Conv2D(32, kernel_size=(3, 3), padding='same', activation=None))
+    model2.add(BatchNormalization())
+    model2.add(Activation('relu'))
+    model2.add(Conv2D(32, kernel_size=5, strides=2, padding='same', activation=None))
+    model2.add(BatchNormalization())
+    model2.add(Activation('relu'))
+    model2.add(MaxPooling2D((2, 2)))
+    model2.add(Dropout(0.4))
+    model2.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
+    model2.add(BatchNormalization())
+    model2.add(Activation('relu'))
+    model2.add(MaxPooling2D(pool_size=(2, 2)))
+    model2.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
+    model2.add(BatchNormalization())
+    model2.add(Activation('relu'))
+    model2.add(Dropout(0.4))
+    model2.add(Flatten())
+    model2.add(Dense(128, activation='relu'))
+    model2.add(Dropout(0.4))
+    model2.add(Dense(num_classes, activation='softmax'))
 
-model2 = Sequential()
-model2.add(Conv2D(32, kernel_size=(3, 3), activation=None, padding="same", kernel_initializer='he_normal',
-                  input_shape=(img_rows, img_cols, 1)))
-model2.add(BatchNormalization())
-model2.add(Activation('relu'))
-model2.add(Conv2D(32, kernel_size=(3, 3), padding='same', activation=None))
-model2.add(BatchNormalization())
-model2.add(Activation('relu'))
-model2.add(Conv2D(32, kernel_size=5, strides=2, padding='same', activation=None))
-model2.add(BatchNormalization())
-model2.add(Activation('relu'))
-model2.add(MaxPooling2D((2, 2)))
-model2.add(Dropout(0.4))
-model2.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
-model2.add(BatchNormalization())
-model2.add(Activation('relu'))
-model2.add(MaxPooling2D(pool_size=(2, 2)))
-model2.add(Conv2D(64, kernel_size=(5, 5), strides=2, padding='same', activation=None))
-model2.add(BatchNormalization())
-model2.add(Activation('relu'))
-model2.add(Dropout(0.4))
-model2.add(Flatten())
-model2.add(Dense(128, activation='relu'))
-model2.add(Dropout(0.4))
-model2.add(Dense(num_classes, activation='softmax'))
+    model2.compile(
+        loss="categorical_crossentropy",
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+        metrics=["accuracy"])
 
-model2.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    return model2
 
 
 # Callbacks
 
-def scheduler(epoch, lr):
-    base = 0.01
+def lr_scheduler(epoch, lr):
     if epoch < 6:
-        return base
+        learning_rate = lr
     elif epoch == 50 or epoch == 100:
-        return base * 0.5
+        learning_rate = lr * 0.5
     elif epoch == 51 or epoch == 101:
-        return base * 0.25
+        learning_rate = lr * 0.25
     else:
-        return lr * 1.25 * 1 / np.round(np.sqrt(epoch), 8)
+        learning_rate = lr * 1.25 * 1 / np.round(np.sqrt(epoch), 8)
+
+    # to log lerning rate data to scalar in TensorBoard
+    tf.summary.scalar('learning rate', data=learning_rate, step=epoch)
+
+    return learning_rate
 
 
-learning_rate_scheduler_cb = tf.keras.callbacks.LearningRateScheduler(scheduler)
-tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+# learning_rate scheduler
+learning_rate_scheduler_cb = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
+
+# TensorBoard
+# logdir = "logs"
+logdir = "logs/scalars/" + datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+file_writer = tf.summary.create_file_writer(logdir + "/metrics")
+file_writer.set_as_default()
+
+# Tensor Board call back
+tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir)
+
+# early stopping
 early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=120, restore_best_weights=True)
 
 # all callbacks
@@ -142,16 +163,18 @@ callbacks_list = [tensorboard_cb, early_stopping_cb, learning_rate_scheduler_cb]
 # ess = [1, 2, 3, 5, 8, 12, 15, 30, 60, 90, 240, 350]
 # ess = [1, 2, 3]
 
-bss = [64, 128, 256, 512, 1024, 2048, 4096, 8192]
+bss = [512, 1024, 2048, 4096, 8192]
 # ess = [4, 5, 8, 12, 15, 30, 60, 90, 120]
 # ess = [4, 5, 8, 12, 15]
+
+lrs = [0.01]
 
 # z early stopping można 1 długie uczenie i tak się przerwie
 ess = [180]
 
 # Próba
-# bss = [2048]
-# ess = [2]
+bss = [2048]
+ess = [2]
 
 # model place holders
 test_results = {}
@@ -174,9 +197,12 @@ for es in ess:
         # elif bs < 2048 and es > 240:
         #     continue
 
+        # Just make sure the model is re-created and training starts from baseline each time
+        model = create_model()
+
         print("Training model with batch size = {} and {} epochs...".format(bs, es), end="", flush=True)
         tic = tm()
-        history_tmp = model2.fit(X_train, y_train,
+        history_tmp = model.fit(X_train, y_train,
                                  batch_size=bs,
                                  epochs=es,
                                  verbose=1,
@@ -188,7 +214,7 @@ for es in ess:
 
         print("\b\b\b, OK! completed in {}s".format(str(execution_time)), flush=True)
 
-        score_tmp = model2.evaluate(X_test, y_test, verbose=0)
+        score_tmp = model.evaluate(X_test, y_test, verbose=0)
         print("batch size == ", bs)
         print('Test loss:', score_tmp[0])
         print('Test accuracy:', score_tmp[1])
@@ -212,12 +238,21 @@ for es in ess:
 
             mlflow.log_param("batch_size", bs)
             mlflow.log_param("epochs", es)
+
+            # mlflow.log_metric("test_loss", score_tmp[0])
+            # mlflow.log_metric("test_loss", score_tmp[0])
+            # mlflow.log_metric("test_loss", score_tmp[0])
+            # mlflow.log_metric("test_loss", score_tmp[0])
+
             mlflow.log_metric("test_loss", score_tmp[0])
             mlflow.log_metric("test_accuracy", score_tmp[1])
             mlflow.log_metric("execution_time", execution_time)
             mlflow.log_artifact("moje_keras_mnist_tuning callbacks.py")
 
-            mlflow.keras.log_model(model2, f"keras_model_cb_{bs}_{es}")
+            # Log text, note description is a first parameter
+            mlflow.log_text(f"keras_model_re-created_cb_{bs}_{es}_es", "model description")
+
+            mlflow.keras.log_model(model, f"keras_model_re-created_cb_{bs}_{es}_es")
 
         current_best = best_model.get('test_accuracy', 0.0)
         if score_tmp[1] > current_best:
