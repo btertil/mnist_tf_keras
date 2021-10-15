@@ -116,24 +116,20 @@ def lr_scheduler(epoch, old_lr):
 
 
 # hyperparameters
-# bss = [32, 128, 256, 512, 1024, 2048, 4096, 8192]
-# bss = [256, 512, 1024]
-# ess = [1, 2, 3, 5, 8, 12, 15, 30, 60, 90, 240, 350]
-# ess = [1, 2, 3]
 
-bss = [512, 1024, 2048, 4096, 8192]
+bss = [256, 512, 1024, 2048, 4096, 8192]
+
 # ess = [4, 5, 8, 12, 15, 30, 60, 90, 120]
-# ess = [4, 5, 8, 12, 15]
-
-lrs = [0.01, 0.05, 0.005]
-
 # z early stopping można 1 długie uczenie i tak się przerwie
 ess = [180]
 
-# Próba
-lrs = [0.025]
-bss = [2048]
-ess = [2, 5]
+lrs = [0.1, 0.05, 0.025, 0.001]
+
+
+# TESTING/Próby dla MLFlow i TB
+# lrs = [0.025]
+# bss = [2048]
+# ess = [2, 5]
 
 # model place holders
 test_results = {}
