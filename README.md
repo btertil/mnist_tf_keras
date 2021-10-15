@@ -11,7 +11,7 @@ Chcę dostać na szybko dobry model (nie do końca dobra praktyka wg Andrew Ng) 
 * TensorBoard z monitorowaniem co daje "wykopanie LR"
 
 Dodatkowo TensorFlow v2 + pre-processing i wykresy.
-Oryginalnie stworzone w VSCode na ubuntulaptop
+Oryginalnie stworzone w VSCode na ubuntulaptop. Potem znacznie poprawiony (win + Pycharm)
 
 ### Komendy do MLFlow:
 - serwer musi być uruchomiony w tym samym katalogu co skrypt
@@ -22,4 +22,4 @@ Oryginalnie stworzone w VSCode na ubuntulaptop
 - musi być pusty / wyczyszczony katalog ./logs
 - $ rm -Rf logs (jeśli istnieje)
 - $ mkdir logs
-- $ tensorboard --logdir ./logs/scalars
+- $ tensorboard --logdir ./logs/runs
