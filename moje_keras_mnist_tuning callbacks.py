@@ -91,11 +91,18 @@ def create_model(learning_rate):
 
 # Callbacks
 
+# Place holder for global variable
+base_learning_rate_global = None
+
+
 def lr_scheduler(epoch, old_lr):
+
+    global base_learning_rate_global
+
     if epoch < 6:
         learning_rate = old_lr
     elif epoch == 50 or epoch == 100:
-        learning_rate = 0.01
+        learning_rate = base_learning_rate_global
     elif epoch == 51 or epoch == 101:
         learning_rate = old_lr * 0.25
     else:
@@ -107,24 +114,6 @@ def lr_scheduler(epoch, old_lr):
 
     return learning_rate
 
-
-# learning_rate scheduler
-learning_rate_scheduler_cb = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
-
-# TensorBoard
-# logdir = "logs"
-logdir = "logs/scalars/" + datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-file_writer = tf.summary.create_file_writer(logdir + "/metrics")
-file_writer.set_as_default()
-
-# Tensor Board call back
-tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir)
-
-# early stopping
-early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=120, restore_best_weights=True)
-
-# all callbacks
-callbacks_list = [tensorboard_cb, early_stopping_cb, learning_rate_scheduler_cb]
 
 # hyperparameters
 # bss = [32, 128, 256, 512, 1024, 2048, 4096, 8192]
@@ -142,9 +131,9 @@ lrs = [0.01, 0.05, 0.005]
 ess = [180]
 
 # Próba
-# lrs = [0.005]
-# bss = [2048]
-# ess = [2]
+lrs = [0.025]
+bss = [2048]
+ess = [2, 5]
 
 # model place holders
 test_results = {}
@@ -162,6 +151,10 @@ for lr in lrs:
     for es in ess:
         for bs in bss:
 
+            base_learning_rate_global = lr
+
+            model_name = f"keras_cb_{str(es)}_{str(bs)}_{str(lr).split('.')[1]}"
+
             # Not needed with EarlyStopping and fixed epochs!
             # if bs < 512 and es > 90:
             #     continue
@@ -171,17 +164,34 @@ for lr in lrs:
             # Just make sure the model is re-created and training starts from baseline each time
             tf_keras_model = create_model(lr)
 
+            # Callbacks
+
+            # learning_rate scheduler
+            learning_rate_scheduler_cb = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
+
+            # TensorBoard
+            # logdir = "logs"
+            logdir = f"logs/runs/{model_name}_" + datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+
+            file_writer = tf.summary.create_file_writer(logdir + "/metrics")
+            file_writer.set_as_default()
+
+            # Tensor Board call back
+            tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir)
+
+            # early stopping
+            early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=120,
+                                                                 restore_best_weights=True)
+
+            # all callbacks
+            callbacks_list = [tensorboard_cb, early_stopping_cb, learning_rate_scheduler_cb]
+
             print("Training model with batch size = {}, {} epochs and base_lr = {}:"
                   .format(bs, es, lr), flush=True)
 
             tic = tm()
-            history_tmp = tf_keras_model.fit(X_train, y_train,
-                                             batch_size=bs,
-                                             epochs=es,
-                                             verbose=1,
-                                             validation_split=0.20,
-                                             callbacks=callbacks_list
-                                             )
+            history_tmp = tf_keras_model.fit(X_train, y_train, batch_size=bs, epochs=es, verbose=1,
+                                             validation_split=0.20, callbacks=callbacks_list)
             toc = tm()
             execution_time = round(toc - tic, 2)
 
@@ -225,9 +235,9 @@ for lr in lrs:
                 mlflow.log_artifact("moje_keras_mnist_tuning callbacks.py")
 
                 # Log text, note description is a first parameter
-                mlflow.log_text(f"keras_model_re-created_cb_{bs}_{es}_es", "model description")
+                mlflow.log_text(f"wszystkie dane odnośnie modelu {model_name} ...", "model description")
 
-                mlflow.keras.log_model(tf_keras_model, f"keras_model_re-created_cb_{bs}_{es}_es")
+                mlflow.keras.log_model(tf_keras_model, f"{model_name}")
 
             current_best = best_model.get('test_accuracy', 0.0)
             if score_tmp[1] > current_best:

@@ -22,4 +22,4 @@ Oryginalnie stworzone w VSCode na ubuntulaptop
 - musi być pusty / wyczyszczony katalog ./logs
 - $ rm -Rf logs (jeśli istnieje)
 - $ mkdir logs
-- $ tensorboard --logdir ./logs
+- $ tensorboard --logdir ./logs/scalars
