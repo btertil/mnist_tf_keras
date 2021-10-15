@@ -95,7 +95,7 @@ def lr_scheduler(epoch, old_lr):
     if epoch < 6:
         learning_rate = old_lr
     elif epoch == 50 or epoch == 100:
-        learning_rate = old_lr * 0.5
+        learning_rate = 0.01
     elif epoch == 51 or epoch == 101:
         learning_rate = old_lr * 0.25
     else:
