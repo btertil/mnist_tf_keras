@@ -102,7 +102,7 @@ def lr_scheduler(epoch, old_lr):
     if epoch < 6:
         learning_rate = old_lr
     elif epoch == 50 or epoch == 100:
-        learning_rate = base_learning_rate_global * 0.33
+        learning_rate = base_learning_rate_global * 0.50
     elif epoch == 51 or epoch == 101:
         learning_rate = old_lr * 0.25
     else:
@@ -117,13 +117,13 @@ def lr_scheduler(epoch, old_lr):
 
 # hyperparameters
 
-bss = [256, 512, 1024, 2048, 4096, 8192]
+bss = [512, 1024, 2048, 4096, 8192]
 
 # ess = [4, 5, 8, 12, 15, 30, 60, 90, 120]
 # z early stopping można 1 długie uczenie i tak się przerwie
 ess = [180]
 
-lrs = [0.1, 0.05, 0.025, 0.001]
+lrs = [0.05, 0.025, 0.01]
 
 
 # TESTING/Próby dla MLFlow i TB
