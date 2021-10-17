@@ -101,9 +101,9 @@ def lr_scheduler(epoch, old_lr):
 
     if epoch < 6:
         learning_rate = old_lr
-    elif epoch == 50 or epoch == 100:
+    elif epoch == 75 or epoch == 150:
         learning_rate = base_learning_rate_global * 0.50
-    elif epoch == 51 or epoch == 101:
+    elif epoch == 76 or epoch == 151:
         learning_rate = old_lr * 0.25
     else:
         # learning_rate = old_lr * 3 / np.round(np.sqrt(epoch), 8)
@@ -123,7 +123,7 @@ bss = [512, 1024, 2048, 4096, 8192]
 # z early stopping można 1 długie uczenie i tak się przerwie
 ess = [180]
 
-lrs = [0.05, 0.025, 0.01]
+lrs = [0.0025, 0.025, 0.01, 0.005]
 
 
 # TESTING/Próby dla MLFlow i TB
@@ -149,7 +149,7 @@ for lr in lrs:
 
             base_learning_rate_global = lr
 
-            model_name = f"keras_cb_{str(es)}_{str(bs)}_{str(lr).split('.')[1]}"
+            model_name = f"keras_cb_acc_{str(es)}_{str(bs)}_{str(lr).split('.')[1]}"
 
             # Not needed with EarlyStopping and fixed epochs!
             # if bs < 512 and es > 90:
@@ -176,7 +176,7 @@ for lr in lrs:
             tensorboard_cb = tf.keras.callbacks.TensorBoard(log_dir=logdir)
 
             # early stopping
-            early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=120,
+            early_stopping_cb = tf.keras.callbacks.EarlyStopping(monitor="val_accuracy", patience=120,
                                                                  restore_best_weights=True)
 
             # all callbacks
