@@ -101,9 +101,9 @@ def lr_scheduler(epoch, old_lr):
 
     if epoch < 6:
         learning_rate = old_lr
-    elif epoch == 75 or epoch == 150:
+    elif epoch == 75:
         learning_rate = base_learning_rate_global * 0.50
-    elif epoch == 76 or epoch == 151:
+    elif epoch == 76:
         learning_rate = old_lr * 0.25
     else:
         # learning_rate = old_lr * 3 / np.round(np.sqrt(epoch), 8)
