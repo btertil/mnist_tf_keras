@@ -22,8 +22,5 @@ Oryginalnie stworzone w VSCode na ubuntulaptop. Potem znacznie poprawiony (win +
 - musi być pusty / wyczyszczony katalog ./logs
 - $ rm -Rf logs (jeśli istnieje)
 - $ mkdir logs
-<<<<<<< HEAD
 - $ tensorboard --logdir ./logs/runs
-=======
 - $ tensorboard --logdir ./logs/runs
->>>>>>> 49e4b45c793c8518c4b6d07a4c37fb9c04019d6c
